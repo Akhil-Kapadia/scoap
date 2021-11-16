@@ -4,7 +4,7 @@ Engineer:  Akhil Kapadia
 Create Date: 11/15/2021 15:43:43 
 File Name:   preProcess.js 
 Project Name:   scoap 
-Class Name:  validate 
+Class Name:  PreProcessor
 
 Description: Takes an input string and validates it. The class has method to return a T/F for valid strings and preprocesses to for algorihtmic purposes.
 
@@ -15,12 +15,24 @@ Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 
 class PreProcessor
 {
+
+    /**
+     * PreProcesses user input and validates it.
+     * @constructor
+     */
     constructor(str)
     {
         this.isValid = this.isValid(str);
-        this.expression = this.preProcess(str);
+        if(this.isValid)
+            this.expression = this.preProcess(str);
     }
 
+    /**
+     * Function validates the users inputs.
+     * 
+     * @param {user input} str 
+     * @returns boolean
+     */
     isValid(str)
     {
         for (let i in str)
@@ -32,59 +44,26 @@ class PreProcessor
         return true;
     }
 
+    /**
+     * PreProcesses the user input and adds multplication operands in.
+     * @param {String} str user input expression
+     * @returns Processed String with * operands.
+     */
     preProcess(str)
     {
+    try{
         let pattern = /[a-z]/i;
-        for (let i in str){
+        for (let i = 0; i < str.length; i++){
             if(i > 0)
-                if(pattern.test(str[i]) || (str[i] == "(") 
-                   && (pattern.test(str[i-1])) ){
+                if( (pattern.test(str[i]) || (str[i] == "(")) && (pattern.test(str[i-1])) ){
                     str  = str.slice(0, i) + "*" + str.slice(i, str.length);
+                    i++;
                 }
         }
         return str;
+    } catch(e){
+        return "";
     }
-
-
-}
-
-function infixToPostfix(str)
-{
-    let st = [];    //stack
-    let pattern = /[a-z]/i;
-    let result = "";
-
-    for(i in str) {
-        if (pattern.test(str[i])){
-            result += str[i];
-        if(i>0)
-            if(pattern.test(str[i]) && (pattern.test(str[i-1]) || str[i-1] == "("))
-                st.push("*");
-
-        }        
-        else if (str[i] == "(")
-            st.push("(");
-        
-        else if(str[i] == ")"){
-            while(st[st.length - 1] != "("){
-                result += st[st.length -1];
-                st.pop();
-            }
-            st.pop();
-
-        } else {
-            while (st.length != 0){
-                result += st[st.length - 1];
-                st.pop();
-            }
-            st.push(str[i])
-        }
-
-
-
 
     }
 }
-
-let obj = new PreProcessor("ABC'+D");
-console.log(obj.expression);

@@ -86,6 +86,10 @@ class Netlist
 // Class to create a component
 class Component
 {
+    /**
+     * Creates objects of each gate component in ckt.
+     * @constructor
+     */
     constructor(expression)
     {   
         this.output = expression;
@@ -95,13 +99,9 @@ class Component
     }
 
     /**
-     * Determines the logic of an expression. Assumes that given expression is
-     * a single logic gate.
-     * 
-     * input: Boolean expression of a component.
-     * Example inputs: A(ABC), AB, A', (AB)'
-     * 
-     * returns: string -> "AND", "OR", "NOT".
+     * Finds the logic expression of gate.
+     * @param {String} str User expression
+     * @returns {String} logic expression in infix
      */
     findLogic(str){
         let exp = Array.from(str);
@@ -131,12 +131,9 @@ class Component
     }
 
     /**
-     * Finds all the inputs of the gate. This can either single letters (Ex. A)
-     * or the output of another gate (Ex (AB)(BC)).
-     * 
-     * input: String - boolean expression of a single logic gate.
-     * 
-     * output: An array of inputs.
+     * Finds inputs of logic gate.  
+     * @param {String} exp User boolean expression in infix
+     * @returns Array of chars of inputs to the gate.
      */
     findInputs(exp)
     {
@@ -157,7 +154,11 @@ class Component
     }
 }
 
-// Returns T/F is its a letter.
+/**
+ * Checks to see if its a letter.
+ * @param {String} str User Expression
+ * @returns Boolean T/F if letter
+ */
 const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
