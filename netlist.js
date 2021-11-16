@@ -19,6 +19,7 @@ class Netlist
 {
     constructor(expression)
     {
+        this.postFix = this.infixToPostfix(expression);
         this.componentList = this.findComponents(expression);
 
     }
@@ -47,39 +48,43 @@ class Netlist
         let st = [];    //stack
         let result = "";
 
-        for (i in str)
+        for (let i in str)
         {
-            let c = s[i];
-
-            // Input to gate appended to result.
+            let c = str[i];
+            // If gate input add to result
             if (isLetter(c)){
                 result += c;
-                if (i > 0 && isLetter(str[i-1]))
-                    st.push("*");
             }
-            // push ( to the stack
-            else if(c == '(')
-                st.push(c);
-            // add insides of parenthesis to result.
-            else if(c == ')')
-            {
-                while (st[st.length - 1])
-                {
+            // if parenthesis stack and add to result
+            else if(c == "("){
+                st.push("(");
+            }
+            // if ) pop and find (
+            else if(c == ")"){
+                while(st[st.length -1] != "("){
                     result += st[st.length - 1];
                     st.pop();
                 }
                 st.pop();
             }
-            // if an operator is scanned.
-            else
-            {
-                while(st.length != 0 && pre
+            // is Logic operand
+            else {
+                while(st.length != 0){
+                    result += st[st.length - 1];
+                    st.pop();
+                }
+                st.push(c);
             }
-
         }
 
-    }
-
+        //Pop remaining operands
+        while(st.length != 0){
+            result += st[st.length - 1];
+            st.pop();
+        }
+        
+        return result;
+    } // End of infixtopostfix
 }
 
 
@@ -162,3 +167,6 @@ class Component
 const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
+
+let x = new Netlist("A+B'*(A*B)'");
+console.log(Netlist.postFix);
