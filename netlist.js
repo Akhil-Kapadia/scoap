@@ -32,7 +32,52 @@ class Netlist
      */
     findComponents(exp)
     {
-        
+
+    }
+
+    /**
+     * Finds the infix of a given expression
+     * 
+     * input: String infix expression
+     * 
+     * returns: String of postfix expression
+     */
+    infixToPostfix(str)
+    {
+        let st = [];    //stack
+        let result = "";
+
+        for (i in str)
+        {
+            let c = s[i];
+
+            // Input to gate appended to result.
+            if (isLetter(c)){
+                result += c;
+                if (i > 0 && isLetter(str[i-1]))
+                    st.push("*");
+            }
+            // push ( to the stack
+            else if(c == '(')
+                st.push(c);
+            // add insides of parenthesis to result.
+            else if(c == ')')
+            {
+                while (st[st.length - 1])
+                {
+                    result += st[st.length - 1];
+                    st.pop();
+                }
+                st.pop();
+            }
+            // if an operator is scanned.
+            else
+            {
+                while(st.length != 0 && pre
+            }
+
+        }
+
     }
 
 }
@@ -42,7 +87,7 @@ class Netlist
 class Component
 {
     constructor(expression)
-    {
+    {   
         this.output = expression;
         this.logic = this.findLogic(expression);
         this.inputs = this.findInputs(expression);
