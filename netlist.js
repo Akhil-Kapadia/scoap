@@ -17,74 +17,50 @@ Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 
 class Netlist
 {
+    /**
+     * Generates a netlist of components and nodes for a given boolean 
+     * expression.
+     * @constructor {String} expression Processed string ready for parsing.
+     */
     constructor(expression)
     {
-        this.postFix = this.infixToPostfix(expression);
         this.componentList = this.findComponents(expression);
 
     }
 
     /**
-     * Create a list of components given string boolean expression
-     * 
-     * input: String boolean expression
-     * 
-     * output: Array of component objects.
+     * Generates a list of Component objects.
+     * @param {String} exp Processed boolean expression
      */
     findComponents(exp)
     {
+        let Components = [];
+        let st = [];
+        let lastOp = [];
 
+        for (let i in exp){
+            let gate = "";
+            //If its an operand push to stack
+            if(isLetter(exp[i]))
+                st.push(exp[i]);
+            else if(exp[i] == "\'") {
+                gate += st.pop() + exp[i];
+            } else {
+                while (st.length > 0){
+                    gate += st.pop();
+                    if (st.length == 0)
+                        gate += exp[i];
+                }
+            }
+            if(lastOp.length > 0){
+                gate += lastOp.pop();
+                Components +=  new Component(gate);
+            }
+            
+            lastOp.push(gate);
+            
+        }
     }
-
-    /**
-     * Finds the infix of a given expression
-     * 
-     * input: String infix expression
-     * 
-     * returns: String of postfix expression
-     */
-    infixToPostfix(str)
-    {
-        let st = [];    //stack
-        let result = "";
-
-        for (let i in str)
-        {
-            let c = str[i];
-            // If gate input add to result
-            if (isLetter(c)){
-                result += c;
-            }
-            // if parenthesis stack and add to result
-            else if(c == "("){
-                st.push("(");
-            }
-            // if ) pop and find (
-            else if(c == ")"){
-                while(st[st.length -1] != "("){
-                    result += st[st.length - 1];
-                    st.pop();
-                }
-                st.pop();
-            }
-            // is Logic operand
-            else {
-                while(st.length != 0){
-                    result += st[st.length - 1];
-                    st.pop();
-                }
-                st.push(c);
-            }
-        }
-
-        //Pop remaining operands
-        while(st.length != 0){
-            result += st[st.length - 1];
-            st.pop();
-        }
-        
-        return result;
-    } // End of infixtopostfix
 }
 
 
@@ -97,6 +73,7 @@ class Component
      */
     constructor(expression)
     {   
+        console.log(expression);
         this.output = expression;
         this.logic = this.findLogic(expression);
         this.inputs = this.findInputs(expression);
@@ -125,6 +102,9 @@ class Component
                 
                 case "+":
                     return "OR";
+                
+                case "*":
+                    return "AND";
                 
                 default :
                     if(isLetter(char)){
@@ -168,5 +148,7 @@ const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-let x = new Netlist("A+B'*(A*B)'");
-console.log(Netlist.postFix);
+console.log("AB'*C*AB+*");
+console.log("AB'C(A+B)'");
+let x = new Netlist("AB'*C*AB+*");
+console.log(Netlist.componentList);

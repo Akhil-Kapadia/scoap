@@ -23,8 +23,10 @@ class PreProcessor
     constructor(str)
     {
         this.isValid = this.isValid(str);
-        if(this.isValid)
-            this.expression = this.preProcess(str);
+        if(this.isValid){
+            this.strProc = this.preProcess(str);
+            this.expression = this.infixToPostfix(this.strProc);
+        }
     }
 
     /**
@@ -38,8 +40,10 @@ class PreProcessor
         for (let i in str)
         {
             let pattern = /[a-z\'()+]/i
-            if(!pattern.test(str[i]))
+            if(!pattern.test(str[i])){
+                throw 'Invalid Input';
                 return false;
+            }
         }
         return true;
     }
@@ -51,19 +55,86 @@ class PreProcessor
      */
     preProcess(str)
     {
-    try{
+    
         let pattern = /[a-z]/i;
         for (let i = 0; i < str.length; i++){
             if(i > 0)
-                if( (pattern.test(str[i]) || (str[i] == "(")) && (pattern.test(str[i-1])) ){
+                if( (pattern.test(str[i]) || (str[i] == "(")) && (pattern.test(str[i-1])) || (str[i-1] == "\'") ){
                     str  = str.slice(0, i) + "*" + str.slice(i, str.length);
                     i++;
                 }
         }
         return str;
-    } catch(e){
-        return "";
     }
 
+    /**
+     * generates the PostFix notation of a given string.
+     * @param {String} str Preprocessed expression
+     * @returns Postfix of expression
+     */
+    infixToPostfix(str)
+    {
+        let st = [];    //stack
+        let result = "";
+
+        for (let i in str)
+        {
+            let c = str[i];
+            // If gate input add to result
+            if (isLetter(c)){
+                result += c;
+            }
+            // if parenthesis stack and add to result
+            else if(c == "("){
+                st.push("(");
+            }
+            // if ) pop and find (
+            else if(c == ")"){
+                while(st[st.length -1] != "("){
+                    result += st[st.length - 1];
+                    st.pop();
+                }
+                st.pop();
+            }
+            // is Logic operand
+            else {
+                while(st.length != 0 && (this.prec(c) <= this.prec(st[st.length - 1])) ){
+                    result += st[st.length - 1];
+                    st.pop();
+                }
+                st.push(c);
+            }
+        }
+
+        //Pop remaining operands
+        while(st.length != 0){
+            result += st[st.length - 1];
+            st.pop();
+        }
+        
+        return result;
+    } // End of infixtopostfix
+
+    prec(c) {
+        if(c == '\'')
+            return 2;
+        else if(c == '+' || c == '*')
+            return 1;
+        else
+            return -1;
     }
 }
+
+/**
+ * Checks to see if its a letter.
+ * @param {String} str User Expression
+ * @returns Boolean T/F if letter
+ */
+ const isLetter = (str) => {
+    return (str.toUpperCase() != str.toLowerCase());
+}
+
+let obj = new PreProcessor("AB'C(A+B)");
+console.log("Expression to parse :" + obj.expression);
+console.log("Parsed Expression   :" + "AB'C*AB+*")
+console.log("What I got          :" +  obj.strProc);
