@@ -68,7 +68,8 @@ class PreProcessor
     }
 
     /**
-     * generates the PostFix notation of a given string.
+     * Generates the PostFix notation of a given string. The expression will have
+     * operators (Logic *,+,') follow the operands (letters, multi input gates)      
      * @param {String} str Preprocessed expression
      * @returns Postfix of expression
      */
@@ -76,6 +77,7 @@ class PreProcessor
     {
         let st = [];    //stack
         let result = "";
+        let lastOp = null;
 
         for (let i in str)
         {
@@ -96,10 +98,16 @@ class PreProcessor
                 }
                 st.pop();
             }
-            // is Logic operand
+            // Process logic operators and handle multi input logic.
             else {
                 while(st.length != 0 && (this.prec(c) <= this.prec(st[st.length - 1])) ){
+                    // If last op is same as current op, remove it.
+                    if(result.charAt(lastOp) == st[st.length - 1])
+                        result = result.slice(0, lastOp) + result.slice(lastOp + 1, result.length);
+
                     result += st[st.length - 1];
+                    // Store index of last operator, ignore NOT
+                    lastOp = (st[st.length - 1] == "\'") ? lastOp : result.length - 1;
                     st.pop();
                 }
                 st.push(c);
@@ -115,6 +123,7 @@ class PreProcessor
         return result;
     } // End of infixtopostfix
 
+    //handles priority of logic. (NOT is first)
     prec(c) {
         if(c == '\'')
             return 2;
@@ -123,7 +132,7 @@ class PreProcessor
         else
             return -1;
     }
-}
+} // End of preproccesor class.
 
 /**
  * Checks to see if its a letter.
@@ -134,7 +143,8 @@ class PreProcessor
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-let obj = new PreProcessor("AB'C(A+B)");
-console.log("Expression to parse :" + obj.expression);
-console.log("Parsed Expression   :" + "AB'C*AB+*")
-console.log("What I got          :" +  obj.strProc);
+let obj = new PreProcessor("AB'C(A+B)'");
+console.log("Expression entered      :" + "AB'C(A+B)'")
+console.log("Expression preprocessed :" + obj.strProc);
+console.log("Expected result         :" + "AB'C*AB+'*")
+console.log("Expression in postfix   :" +  obj.expression);
