@@ -14,6 +14,7 @@ Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 */
 
 const { throws } = require("assert");
+const { generateKeyPairSync } = require("crypto");
 
 
 
@@ -38,11 +39,11 @@ class Netlist
     {
         let Components = [];
         let gates = [];
-        let lastOps = [];
+        let st = [];
+        let lastOp = "";
 
         for (let i in exp){
             let gate = "";
-            let st = [];
             //If its an operand push to stack
             if(isLetter(exp[i]))
                 st.push(exp[i]);
@@ -77,17 +78,16 @@ class Netlist
                     default:
                         throw "Invalid Input";                                  // Detected an operation not specified.
                 }
+                
+                if (exp[i] == lastOp)
+                    gates.pop();
                 gates.push(gate);
-                lastOps.push(exp[i]);
+                lastOp = exp[i];
             }
         }
-        // Remove repeated expressions that may occur in multi input gates.
-        for (i = gates.length - 1; i > 0; i++)
-        {
-            if (lastOps[i] == lastOps[i - 1])
+        // Create component objects for each gate.    
+        gates.forEach((item) => {Components = new Component(item)});
 
-        }
-        console.log(gates);
     }
 }
 
