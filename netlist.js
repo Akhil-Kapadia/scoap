@@ -13,6 +13,8 @@ Revision: 1.00
 Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 */
 
+const { throws } = require("assert");
+
 
 
 class Netlist
@@ -35,31 +37,57 @@ class Netlist
     findComponents(exp)
     {
         let Components = [];
-        let st = [];
-        let lastOp = [];
+        let gates = [];
+        let lastOps = [];
 
         for (let i in exp){
             let gate = "";
+            let st = [];
             //If its an operand push to stack
             if(isLetter(exp[i]))
                 st.push(exp[i]);
-            else if(exp[i] == "\'") {
-                gate += st.pop() + exp[i];
-            } else {
-                while (st.length > 0){
-                    gate += st.pop();
-                    if (st.length == 0)
-                        gate += exp[i];
+            // If its an operator process is, and push evaluated exp onto stack
+            else {
+                let op1 = st.pop();
+                let op2 = st[st.length - 1]; // Keep 2nd in stack in case of NOT.
+
+                switch (exp[i]){
+                    case "\'":
+                        gate = "(" + op1 + ")" +exp[i];                         // Put () around NOTs
+                        st.push(gate);
+                    break;
+                    case "*":
+                        gate = op1;
+                        if (lastOp == exp[i])                                   // Handle successive operations ie. Multi input AND
+                            while (st.length > 0)
+                                gate += st.pop();
+                        else 
+                            gate += st.pop() + exp[i];                                                                                                       
+                        st.push(gate);
+                    break;
+                    case "+":
+                        gate = op1;
+                        if (lastOp == exp[i])                                   // Handle successive operations ie. Multi input OR
+                            while (st.length > 0)                               
+                                gate += st.pop();
+                        else 
+                            gate += st.pop() + exp[i];                                                                                
+                        st.push(gate);
+                    break;
+                    default:
+                        throw "Invalid Input";                                  // Detected an operation not specified.
                 }
+                gates.push(gate);
+                lastOps.push(exp[i]);
             }
-            if(lastOp.length > 0){
-                gate += lastOp.pop();
-                Components +=  new Component(gate);
-            }
-            
-            lastOp.push(gate);
-            
         }
+        // Remove repeated expressions that may occur in multi input gates.
+        for (i = gates.length - 1; i > 0; i++)
+        {
+            if (lastOps[i] == lastOps[i - 1])
+
+        }
+        console.log(gates);
     }
 }
 
@@ -148,7 +176,8 @@ const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-console.log("AB'*C*AB+*");
 console.log("AB'C(A+B)'");
-let x = new Netlist("AB'*C*AB+*");
+console.log("AB'*C*AB+'*");
+
+let x = new Netlist("AB'*C*AB+'*");
 console.log(Netlist.componentList);
