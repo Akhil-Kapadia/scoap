@@ -14,7 +14,6 @@ Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 */
 
 const { throws } = require("assert");
-const { generateKeyPairSync } = require("crypto");
 
 
 
@@ -86,7 +85,7 @@ class Netlist
             }
         }
         // Create component objects for each gate.    
-        gates.forEach((item) => {Components = new Component(item)});
+        gates.forEach((item) => {Components = new Component(item, index)});
 
     }
 }
@@ -99,13 +98,12 @@ class Component
      * Creates objects of each gate component in ckt.
      * @constructor
      */
-    constructor(expression)
+    constructor(expression, id)
     {   
-        console.log(expression);
+        this.ID = id;
         this.output = expression;
         this.logic = this.findLogic(expression);
         this.inputs = this.findInputs(expression);
-        this.dir = null;        // can either be an input gate or output gate
     }
 
     /**
@@ -114,32 +112,20 @@ class Component
      * @returns {String} logic expression in infix
      */
     findLogic(str){
-        let exp = Array.from(str);
-
-        while(exp.length > 0){
-            let char = exp.pop();
-
-            switch (char){
-                case ")":
-                    while(char != "(") {
-                        char = exp.pop();
-                    } 
-                    break;
-                case "'":
-                    return "NOT";
+        switch (str[str.length - 1]){
+            case "'":
+                return "NOT";
                 
-                case "+":
-                    return "OR";
+            case "+":
+                return "OR";
                 
-                case "*":
-                    return "AND";
+            case "*":
+                return "AND";
                 
-                default :
-                    if(isLetter(char)){
-                        return "AND";
-                    }
-                    break;
-            }
+            default :
+                throw "Invalid Input";
+                break;
+            
         }
     }
 
@@ -150,17 +136,20 @@ class Component
      */
     findInputs(exp)
     {
+        exp = exp.slice(0, exp.length - 1);     // remove logic operand.
         let myArr = [];
         // if parenthesis exist.
         while(/[()]/i.test(exp)){
-            // Extract the parenthesis and contents.
-            myArr.push(exp.slice(exp.indexOf("("), exp.indexOf(")")+1) );
+            // Extract the parenthesis and contents as a single input
+            myArr.push(exp.slice(exp.indexOf("("), exp.indexOf(")") + 1) );
+            if(exp[exp.indexOf(")") + 1] == "\'")
+                myArr[myArr.length - 1] += "\'";    //Handle NOTs
             exp = exp.replace(myArr[myArr.length - 1], "");  //remove from string
         }
 
         for(let x in exp) {
             if (isLetter(exp[x]))
-                myArr.push(exp[x]);
+                myArr.push(exp[x]); // Add each Letter as a single operand.
         }
 
         return myArr;
