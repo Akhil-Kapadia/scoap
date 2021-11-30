@@ -12,10 +12,12 @@ Description: Classes to generate the netlists with an object array for
 Revision: 1.00
 Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 */
-
+"use strict";
 const { throws } = require("assert");
 
-
+// TODO: Add functionality to Component.findLogic so that when an operand is
+// found the prefix is treated as a single entity. Ie (BA+)'C(B)'A** -> the (BA+)'
+// is the first operand and all sucessive are treated as the 2nd/nth input.
 
 class Netlist
 {
@@ -27,7 +29,7 @@ class Netlist
     constructor(expression)
     {
         this.componentList = this.findComponents(expression);
-
+        this.nodesList = this.findNodes(this.componentList);
     }
 
     /**
@@ -85,18 +87,42 @@ class Netlist
             }
         }
         // Create component objects for each gate.    
-        gates.forEach((item) => {Components = new Component(item, index)});
+        gates.forEach((item, index) => {Components.push(new Component(item, index))});
+        return Components;
+
+    } // End findComponents
+
+    /**
+     * Generates a list of nodes connecting components together.
+     * @param {Component Array} list A list of Components in the ckt.
+     */
+    findNodes(list)
+    {   
+        list.forEach( (vals) => console.log(vals));
+        let node_list = [];
+        let i,j;
+        // Iterate through each gate output and attempt to find a corresponding input,
+        // if none is found, then the gate is the last gate.
+        for (i = 0; i < list.length; i++){
+            let obj = list[i];
+            let exp  = obj.output;
+            for(j = 0; j < list.length; j++){
+                let n = list[j].inputs.find( (val) => val == exp);
+                console.log(n);
+            }
+        }
 
     }
-}
+} // End Netlist Class
 
 
-// Class to create a component
+/** Class to create a Component */
 class Component
 {
     /**
-     * Creates objects of each gate component in ckt.
-     * @constructor
+     * Represents boolean logic gate.
+     * @param {String} expression Boolean expression
+     * @param {Int} id Identification # of gate
      */
     constructor(expression, id)
     {   
@@ -141,10 +167,13 @@ class Component
         // if parenthesis exist.
         while(/[()]/i.test(exp)){
             // Extract the parenthesis and contents as a single input
-            myArr.push(exp.slice(exp.indexOf("("), exp.indexOf(")") + 1) );
-            if(exp[exp.indexOf(")") + 1] == "\'")
-                myArr[myArr.length - 1] += "\'";    //Handle NOTs
+            if(exp[exp.indexOf(")") + 1] == "\'"){ // Handle NOTs
+                myArr.push(exp.slice(exp.indexOf("("), exp.indexOf(")")+1) );
+                myArr[myArr.length - 1] += "\'"; 
+            }else
+                myArr.push(exp.slice(exp.indexOf("(") + 1, exp.indexOf(")")));
             exp = exp.replace(myArr[myArr.length - 1], "");  //remove from string
+            exp = exp.replace("()", "");
         }
 
         for(let x in exp) {
@@ -153,6 +182,23 @@ class Component
         }
 
         return myArr;
+    }
+} // End Component Class
+
+/**Class representing a node/wire in a ckt. */
+class Nodes{
+
+    /**
+     * A node connecting two components together.
+     * @param {int} id The id of this node.
+     * @param {String} input The input of the wire.
+     * @param {String} output The output of a wire
+     */
+    constructor(input, output, id)
+    {
+        this.id = id;
+        this.in = input;
+        this.out = output;
     }
 }
 
