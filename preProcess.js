@@ -68,8 +68,9 @@ class PreProcessor
     }
 
     /**
-     * Generates the PostFix notation of a given string. The expression will have
-     * operators (Logic *,+,') follow the operands (letters, multi input gates)      
+     * Generates the PostFix notation of a given string. The expression will be
+     * in reverse polish notation. Each operator will have two operands 
+     * preceding it.
      * @param {String} str Preprocessed expression
      * @returns Postfix of expression
      */
@@ -101,13 +102,7 @@ class PreProcessor
             // Process logic operators and handle multi input logic.
             else {
                 while(st.length != 0 && (this.prec(c) <= this.prec(st[st.length - 1])) ){
-                    // If last op is same as current op, remove it.
-                    if(result.charAt(lastOp) == st[st.length - 1])
-                        result = result.slice(0, lastOp) + result.slice(lastOp + 1, result.length);
-
                     result += st[st.length - 1];
-                    // Store index of last operator, ignore NOT
-                    lastOp = (st[st.length - 1] == "\'") ? lastOp : result.length - 1;
                     st.pop();
                 }
                 st.push(c);
@@ -146,5 +141,5 @@ class PreProcessor
 let obj = new PreProcessor("AB'C(A+B)'");
 console.log("Expression entered      :" + "AB'C(A+B)'")
 console.log("Expression preprocessed :" + obj.strProc);
-console.log("Expected result         :" + "AB'C*AB+'*")
+console.log("Expected result         :" + "AB'*C*AB+'*")
 console.log("Expression in postfix   :" +  obj.expression);

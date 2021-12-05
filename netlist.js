@@ -12,10 +12,11 @@ Description: Classes to generate the netlists with an object array for
 Revision: 1.00
 Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 */
+// "use strict";
+const { throws } = require("assert");
 
 
-
-class Netlist
+class Netlist   
 {
     /**
      * Generates a netlist of components and nodes for a given boolean 
@@ -25,7 +26,7 @@ class Netlist
     constructor(expression)
     {
         this.componentList = this.findComponents(expression);
-
+        this.nodesList = this.findNodes(this.componentList);
     }
 
     /**
@@ -35,49 +36,98 @@ class Netlist
     findComponents(exp)
     {
         let Components = [];
+        let gates = [];
         let st = [];
-        let lastOp = [];
+        let lastOp = "";
 
         for (let i in exp){
             let gate = "";
             //If its an operand push to stack
             if(isLetter(exp[i]))
                 st.push(exp[i]);
-            else if(exp[i] == "\'") {
-                gate += st.pop() + exp[i];
-            } else {
-                while (st.length > 0){
-                    gate += st.pop();
-                    if (st.length == 0)
-                        gate += exp[i];
+            // If its an operator process is, and push evaluated exp onto stack
+            else {
+                let op1 = st.pop();
+                let op2 = st[st.length - 1]; // Keep 2nd in stack in case of NOT.
+
+                switch (exp[i]){
+                    case "\'":
+                        gate = op1 +exp[i];                         // Put () around NOTs
+                        st.push(gate);
+                    break;
+                    case "*":
+                        gate = op1;
+                        if (lastOp == exp[i])                                   // Handle successive operations ie. Multi input AND
+                            while (st.length > 0)
+                                gate += st.pop();
+                        else 
+                            gate += st.pop() + exp[i];                                                                                                       
+                        st.push(gate);
+                    break;
+                    case "+":
+                        gate = op1;
+                        if (lastOp == exp[i])                                   // Handle successive operations ie. Multi input OR
+                            while (st.length > 0)                               
+                                gate += st.pop();
+                        else 
+                            gate += st.pop() + exp[i];                                                                                
+                        st.push(gate);
+                    break;
+                    default:
+                        throw "Invalid Input";                                  // Detected an operation not specified.
                 }
+                
+                if (exp[i] == lastOp)
+                    gates.pop();
+                gates.push(gate);
+                lastOp = exp[i];
             }
-            if(lastOp.length > 0){
-                gate += lastOp.pop();
-                Components +=  new Component(gate);
-            }
-            
-            lastOp.push(gate);
-            
         }
+        // Create component objects for each gate.    
+        gates.forEach((item, index) => {Components.push(new Component(item, index))});
+        Components.forEach(item => console.log(item));
+        return Components;
+
+    } // End findComponents
+
+    /**
+     * Generates a list of nodes connecting components together.
+     * @param {Component Array} list A list of Components in the ckt.
+     */
+    findNodes(list)
+    {   
+        list.forEach( (vals) => console.log(vals));
+        let node_list = [];
+        let i,j;
+        // Iterate through each gate output and attempt to find a corresponding input,
+        // if none is found, then the gate is the last gate.
+        for (i = 0; i < list.length; i++){
+            let obj = list[i];
+            let exp  = obj.output;
+            for(j = 0; j < list.length; j++){
+                let n = list[j].inputs.find( (val) => val == exp);
+                console.log(n);
+            }
+        }
+
     }
-}
+} // End Netlist Class
 
 
-// Class to create a component
+/** Class to create a Component */
 class Component
 {
     /**
-     * Creates objects of each gate component in ckt.
-     * @constructor
+     * Represents boolean logic gate.
+     * @param {String} expression Boolean expression
+     * @param {Int} id Identification # of gate
      */
-    constructor(expression)
+    constructor(expression, id)
     {   
-        console.log(expression);
+        this.ID = id;
         this.output = expression;
         this.logic = this.findLogic(expression);
         this.inputs = this.findInputs(expression);
-        this.dir = null;        // can either be an input gate or output gate
     }
 
     /**
@@ -86,32 +136,20 @@ class Component
      * @returns {String} logic expression in infix
      */
     findLogic(str){
-        let exp = Array.from(str);
-
-        while(exp.length > 0){
-            let char = exp.pop();
-
-            switch (char){
-                case ")":
-                    while(char != "(") {
-                        char = exp.pop();
-                    } 
-                    break;
-                case "'":
-                    return "NOT";
+        switch (str[str.length - 1]){
+            case "'":
+                return "NOT";
                 
-                case "+":
-                    return "OR";
+            case "+":
+                return "OR";
                 
-                case "*":
-                    return "AND";
+            case "*":
+                return "AND";
                 
-                default :
-                    if(isLetter(char)){
-                        return "AND";
-                    }
-                    break;
-            }
+            default :
+                throw "Invalid Input";
+                break;
+            
         }
     }
 
@@ -122,20 +160,55 @@ class Component
      */
     findInputs(exp)
     {
-        let myArr = [];
-        // if parenthesis exist.
-        while(/[()]/i.test(exp)){
-            // Extract the parenthesis and contents.
-            myArr.push(exp.slice(exp.indexOf("("), exp.indexOf(")")+1) );
-            exp = exp.replace(myArr[myArr.length - 1], "");  //remove from string
+        exp = exp.replace(exp[exp.length - 1], "");  // Remove gate operator
+        let operands = [];
+        let st =[];
+
+        while (exp.length > 0){
+
+            // Slap the not on the last input on the stack. NOTs are stupid
+            if(/[']/.test(exp[0])){
+                st[st.length-1] += "\'";
+                exp = exp.replace(exp[0], "");
+        
+            // If there is an operand, then contents of the stack are an operand from a gate
+            } else  if(/[+*]/.test(exp[0]))
+            {
+                let op = ""
+                while(st.length > 0)
+                    op += st.pop();
+                operands.push(op + exp[0]);
+                exp = exp.replace(exp[0], "");
+            
+            // when in doubt push it to the stack
+            } else
+            {
+                st.push(exp[0]);
+                exp = exp.replace(exp[0], "");
+            }
         }
 
-        for(let x in exp) {
-            if (isLetter(exp[x]))
-                myArr.push(exp[x]);
-        }
+        // Dump st contents as individual inputs.
+        st.forEach( item => operands.push(item));
 
-        return myArr;
+        return operands;
+    }
+} // End Component Class
+
+/**Class representing a node/wire in a ckt. */
+class Node
+{
+    /**
+     * A node connecting two components together.
+     * @param {int} id The id of this node.
+     * @param {String} input The input of the wire.
+     * @param {String} output The output of a wire
+     */
+    constructor(input, output, id)
+    {
+        this.id = id;
+        this.in = input;
+        this.out = output;
     }
 }
 
@@ -148,7 +221,8 @@ const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-console.log("AB'*C*AB+*");
 console.log("AB'C(A+B)'");
-let x = new Netlist("AB'*C*AB+*");
-console.log(Netlist.componentList);
+console.log("AB'*C*AB+'*");
+let x = new Netlist("AB'*C*AB+'*");
+x.componentList.forEach( item => console.log(item));
+console.log("done");
