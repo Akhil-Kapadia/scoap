@@ -40,6 +40,16 @@ class Netlist
         let st = [];
         let lastOp = "";
 
+        // Add output and input variables as input components.
+        gates.push("F");    // Default output if F
+        for (let i in exp)
+        {
+            if (!st.includes(exp[i]) && isLetter(exp[i]))
+                st.push(exp[i]);
+        }
+        st.forEach(item => gates.push(item));
+        st = [];
+
         for (let i in exp){
             let gate = "";
             //If its an operand push to stack
@@ -83,9 +93,10 @@ class Netlist
                 lastOp = exp[i];
             }
         }
+
         // Create component objects for each gate.    
         gates.forEach((item, index) => {Components.push(new Component(item, index))});
-        Components.forEach(item => console.log(item));
+        // Components.forEach(item => console.log(item));   // For debugging purposes.
         return Components;
 
     } // End findComponents
@@ -94,22 +105,29 @@ class Netlist
      * Generates a list of nodes connecting components together.
      * @param {Component Array} list A list of Components in the ckt.
      */
-    findNodes(list)
+    findNodes(comp)
     {   
-        list.forEach( (vals) => console.log(vals));
-        let node_list = [];
-        let i,j;
-        // Iterate through each gate output and attempt to find a corresponding input,
-        // if none is found, then the gate is the last gate.
-        for (i = 0; i < list.length; i++){
-            let obj = list[i];
-            let exp  = obj.output;
-            for(j = 0; j < list.length; j++){
-                let n = list[j].inputs.find( (val) => val == exp);
-                console.log(n);
-            }
-        }
+        let count = 0; 
+        let nodes = [];
+        // Create a list of nodes, start at the end with output wire = F
+        comp.forEach( (item, index, array) => { // go through all components
+            let exp = item.output;
 
+            array.forEach( element => { // Check all the inputs for matches
+                element.inputs.forEach( str => {
+                    if (str === exp){   // If matches generate a node connecting the two componenets together.
+                        nodes.push(new Node(count, exp, item, element));
+                        count++;
+                    }
+                });
+            })
+        })
+        
+        // Create an output node F.
+        nodes.push(new Node(count, "F", comp[0], comp[comp.length - 1]));
+
+        // nodes.forEach(item => console.log(item)); // Debugging purposes
+        return nodes;
     }
 } // End Netlist Class
 
@@ -145,10 +163,9 @@ class Component
                 
             case "*":
                 return "AND";
-                
-            default :
-                throw "Invalid Input";
-                break;
+            
+            default :   // Assume component a COMM port/ input.
+                return "VARIABLE";
             
         }
     }
@@ -176,7 +193,7 @@ class Component
             {
                 let op = ""
                 while(st.length > 0)
-                    op += st.pop();
+                    op = st.pop() + op;
                 operands.push(op + exp[0]);
                 exp = exp.replace(exp[0], "");
             
@@ -201,14 +218,16 @@ class Node
     /**
      * A node connecting two components together.
      * @param {int} id The id of this node.
-     * @param {String} input The input of the wire.
-     * @param {String} output The output of a wire
+     * @param {String} expression The String expression that the wire represents
+     * @param {String} input The input component of the wire
+     * @param {String} output The output component of the wire.
      */
-    constructor(input, output, id)
+    constructor(id, expression, input, output)
     {
         this.id = id;
-        this.in = input;
-        this.out = output;
+        this.expression = expression;
+        this._in = input;
+        this._out = output;
     }
 }
 
@@ -221,8 +240,9 @@ const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-console.log("AB'C(A+B)'");
-console.log("AB'*C*AB+'*");
-let x = new Netlist("AB'*C*AB+'*");
-x.componentList.forEach( item => console.log(item));
-console.log("done");
+// Test case
+// console.log("AB'C(A+B)'");
+// console.log("AB'*C*AB+'*");
+// let x = new Netlist("AB'*C*AB+'*");
+// x.componentList.forEach( item => console.log(item));
+// console.log("done");
