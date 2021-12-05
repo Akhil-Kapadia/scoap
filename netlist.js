@@ -12,14 +12,11 @@ Description: Classes to generate the netlists with an object array for
 Revision: 1.00
 Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
 */
-"use strict";
+// "use strict";
 const { throws } = require("assert");
 
-// TODO: Add functionality to Component.findLogic so that when an operand is
-// found the prefix is treated as a single entity. Ie (BA+)'C(B)'A** -> the (BA+)'
-// is the first operand and all sucessive are treated as the 2nd/nth input.
 
-class Netlist
+class Netlist   
 {
     /**
      * Generates a netlist of components and nodes for a given boolean 
@@ -55,7 +52,7 @@ class Netlist
 
                 switch (exp[i]){
                     case "\'":
-                        gate = "(" + op1 + ")" +exp[i];                         // Put () around NOTs
+                        gate = op1 +exp[i];                         // Put () around NOTs
                         st.push(gate);
                     break;
                     case "*":
@@ -88,6 +85,7 @@ class Netlist
         }
         // Create component objects for each gate.    
         gates.forEach((item, index) => {Components.push(new Component(item, index))});
+        Components.forEach(item => console.log(item));
         return Components;
 
     } // End findComponents
@@ -162,32 +160,44 @@ class Component
      */
     findInputs(exp)
     {
-        exp = exp.slice(0, exp.length - 1);     // remove logic operand.
-        let myArr = [];
-        // if parenthesis exist.
-        while(/[()]/i.test(exp)){
-            // Extract the parenthesis and contents as a single input
-            if(exp[exp.indexOf(")") + 1] == "\'"){ // Handle NOTs
-                myArr.push(exp.slice(exp.indexOf("("), exp.indexOf(")")+1) );
-                myArr[myArr.length - 1] += "\'"; 
-            }else
-                myArr.push(exp.slice(exp.indexOf("(") + 1, exp.indexOf(")")));
-            exp = exp.replace(myArr[myArr.length - 1], "");  //remove from string
-            exp = exp.replace("()", "");
+        exp = exp.replace(exp[exp.length - 1], "");  // Remove gate operator
+        let operands = [];
+        let st =[];
+
+        while (exp.length > 0){
+
+            // Slap the not on the last input on the stack. NOTs are stupid
+            if(/[']/.test(exp[0])){
+                st[st.length-1] += "\'";
+                exp = exp.replace(exp[0], "");
+        
+            // If there is an operand, then contents of the stack are an operand from a gate
+            } else  if(/[+*]/.test(exp[0]))
+            {
+                let op = ""
+                while(st.length > 0)
+                    op += st.pop();
+                operands.push(op + exp[0]);
+                exp = exp.replace(exp[0], "");
+            
+            // when in doubt push it to the stack
+            } else
+            {
+                st.push(exp[0]);
+                exp = exp.replace(exp[0], "");
+            }
         }
 
-        for(let x in exp) {
-            if (isLetter(exp[x]))
-                myArr.push(exp[x]); // Add each Letter as a single operand.
-        }
+        // Dump st contents as individual inputs.
+        st.forEach( item => operands.push(item));
 
-        return myArr;
+        return operands;
     }
 } // End Component Class
 
 /**Class representing a node/wire in a ckt. */
-class Nodes{
-
+class Node
+{
     /**
      * A node connecting two components together.
      * @param {int} id The id of this node.
@@ -213,6 +223,6 @@ const isLetter = (str) => {
 
 console.log("AB'C(A+B)'");
 console.log("AB'*C*AB+'*");
-
 let x = new Netlist("AB'*C*AB+'*");
-console.log(Netlist.componentList);
+x.componentList.forEach( item => console.log(item));
+console.log("done");
