@@ -144,3 +144,6 @@ class PreProcessor
 // console.log("Expression preprocessed :" + obj.strProc);
 // console.log("Expected result         :" + "AB'*C*AB+'*")
 // console.log("Expression in postfix   :" +  obj.expression);
+
+// Export modules
+module.exports = PreProcessor;

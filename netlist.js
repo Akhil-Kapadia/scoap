@@ -246,3 +246,6 @@ const isLetter = (str) => {
 // let x = new Netlist("AB'*C*AB+'*");
 // x.componentList.forEach( item => console.log(item));
 // console.log("done");
+
+// Export modules to use in external code.
+module.exports = Netlist, Component, Node;
