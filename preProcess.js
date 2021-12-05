@@ -138,8 +138,9 @@ class PreProcessor
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-let obj = new PreProcessor("AB'C(A+B)'");
-console.log("Expression entered      :" + "AB'C(A+B)'")
-console.log("Expression preprocessed :" + obj.strProc);
-console.log("Expected result         :" + "AB'*C*AB+'*")
-console.log("Expression in postfix   :" +  obj.expression);
+// Test case.
+// let obj = new PreProcessor("AB'C(A+B)'");
+// console.log("Expression entered      :" + "AB'C(A+B)'")
+// console.log("Expression preprocessed :" + obj.strProc);
+// console.log("Expected result         :" + "AB'*C*AB+'*")
+// console.log("Expression in postfix   :" +  obj.expression);
