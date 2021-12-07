@@ -25,8 +25,10 @@ class Netlist
      */
     constructor(expression)
     {
+        this.expression = expression;
         this.componentList = this.findComponents(expression);
         this.nodesList = this.findNodes(this.componentList);
+        this.netlist = this.generateNetlist(this.nodesList);
     }
 
     /**
@@ -96,9 +98,8 @@ class Netlist
 
         // Create component objects for each gate.    
         gates.forEach((item, index) => {Components.push(new Component(item, index))});
-        // Components.forEach(item => console.log(item));   // For debugging purposes.
+        
         return Components;
-
     } // End findComponents
 
     /**
@@ -124,10 +125,31 @@ class Netlist
         })
         
         // Create an output node F.
-        nodes.push(new Node(count, "F", comp[0], comp[comp.length - 1]));
+        nodes.push(new Node(count, this.expression, comp[comp.length - 1], comp[0]));
 
-        // nodes.forEach(item => console.log(item)); // Debugging purposes
         return nodes;
+    }
+
+    /**
+     * Generates an array of all components and its associated nodes.
+     * @param {Component List} comps List of Component objects.
+     * @param {Node List} nodes List of Node objects.
+     * @returns {Object} Array of IDs of components.
+     */
+    generateNetlist( nodes)
+    {
+        let nets = {};
+
+        nodes.forEach((item) => { // iterate through connected components.
+            let st = [];
+            nodes.forEach(element => {  // Find nodes connected to component.
+                if(item._in === element._out)
+                    st.push(element.ID);    // Store IDs in an array.
+            });
+            nets[item._in] = st;
+        });
+
+        return nets;
     }
 } // End Netlist Class
 
@@ -146,6 +168,7 @@ class Component
         this.output = expression;
         this.logic = this.findLogic(expression);
         this.inputs = this.findInputs(expression);
+        this.layer = this.findLayer(this.inputs);
     }
 
     /**
@@ -163,9 +186,12 @@ class Component
                 
             case "*":
                 return "AND";
+
+            case "F":
+                return "OUTPUT"
             
             default :   // Assume component a COMM port/ input.
-                return "VARIABLE";
+                return "INPUT";
             
         }
     }
@@ -185,7 +211,10 @@ class Component
 
             // Slap the not on the last input on the stack. NOTs are stupid
             if(/[']/.test(exp[0])){
-                st[st.length-1] += "\'";
+                if(st.length >0)
+                    st[st.length-1] += "\'";
+                else
+                    operands[operands.length-1] += "\'";
                 exp = exp.replace(exp[0], "");
         
             // If there is an operand, then contents of the stack are an operand from a gate
@@ -210,6 +239,27 @@ class Component
 
         return operands;
     }
+
+    findLayer(array)
+    {
+        let layer;
+        if (this.logic === "INPUT")
+            layer = 0; // If its an input variable
+        else
+            layer = 1;
+        // Parse inputs and count # of operations for layer size. Take the biggest one.
+        for (let i = 0; i < array.length; i++){
+            let set = array[i].match(/[+*']/g);
+            if(set === null)
+                continue;
+            if(layer < set.length + 1)
+                layer++;
+        };
+
+        if(this.logic === "OUTPUT")
+            layer = -1;
+        return layer;
+    }
 } // End Component Class
 
 /**Class representing a node/wire in a ckt. */
@@ -217,17 +267,28 @@ class Node
 {
     /**
      * A node connecting two components together.
-     * @param {int} id The id of this node.
+     * @param {int} ID The id of this node.
      * @param {String} expression The String expression that the wire represents
-     * @param {String} input The input component of the wire
-     * @param {String} output The output component of the wire.
+     * @param {String} input The ID of the input component of the wire
+     * @param {String} output The ID of the output component of the wire.
      */
     constructor(id, expression, input, output)
     {
-        this.id = id;
+        this.ID = id;
         this.expression = expression;
-        this._in = input;
-        this._out = output;
+        this._in = input.ID;
+        this._out = output.ID;
+        this.layer = this.findLayer(input);
+    }
+
+    /**
+     * Finds the layer that this node is on based on the incoming component.
+     * @param {Component} comp Object of Component Class.
+     * @returns {int} Layer number
+     */
+    findLayer(comp)
+    {
+        return comp.layer;
     }
 }
 
@@ -240,12 +301,18 @@ const isLetter = (str) => {
     return (str.toUpperCase() != str.toLowerCase());
 }
 
-// Test case
+// //Test case
 // console.log("AB'C(A+B)'");
 // console.log("AB'*C*AB+'*");
 // let x = new Netlist("AB'*C*AB+'*");
-// x.componentList.forEach( item => console.log(item));
+// x.componentList.forEach(item => console.log(item));
+// x.nodesList.forEach(item => console.log(item));
+// console.log(x.netlist);
 // console.log("done");
 
 // Export modules to use in external code.
-module.exports = Netlist, Component, Node;
+module.exports = {
+    Netlist, 
+    Component, 
+    Node
+};
