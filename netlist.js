@@ -126,7 +126,6 @@ class Netlist
         
         // Create an output node F.
         nodes.push(new Node(count, this.expression, comp[comp.length - 1], comp[0]));
-
         return nodes;
     }
 
@@ -138,15 +137,29 @@ class Netlist
      */
     generateNetlist( nodes)
     {
-        let nets = {};
+        let nets = {
+            incoming : [],
+            outgoing : []
+        };
 
+        // Find incoming nodes for each component
         nodes.forEach((item) => { // iterate through connected components.
             let st = [];
             nodes.forEach(element => {  // Find nodes connected to component.
                 if(item._in === element._out)
                     st.push(element.ID);    // Store IDs in an array.
             });
-            nets[item._in] = st;
+            nets.incoming[item._in] = st;
+        });
+
+        // Find outgoing nodes for each component
+        nodes.forEach((item) => { // iterate through connected components.
+            let st = [];
+            nodes.forEach(element => {  // Find nodes connected to component.
+                if(item._out === element._in)
+                    st.push(element.ID);    // Store IDs in an array.
+            });
+            nets.outgoing[item._in] = st;
         });
 
         return nets;
@@ -203,6 +216,9 @@ class Component
      */
     findInputs(exp)
     {
+        // If this is the output component.
+        if (exp === "F")
+            return [exp];
         exp = exp.replace(exp[exp.length - 1], "");  // Remove gate operator
         let operands = [];
         let st =[];
@@ -269,8 +285,8 @@ class Node
      * A node connecting two components together.
      * @param {int} ID The id of this node.
      * @param {String} expression The String expression that the wire represents
-     * @param {String} input The ID of the input component of the wire
-     * @param {String} output The ID of the output component of the wire.
+     * @param {int} input The ID of the input component of the wire
+     * @param {int} output The ID of the output component of the wire.
      */
     constructor(id, expression, input, output)
     {
