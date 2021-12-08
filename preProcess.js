@@ -72,8 +72,8 @@ class PreProcessor
      */
     preProcess(str)
     {
-        for (let i = 1; i < str.length - 1; i++){
-            // Add * when AB or A( -> A*B or A*(
+        for (let i = 1; i < str.length; i++){
+            // Add * when AB or )A -> A*B or )*A
             if(/[a-z(]/i.test(str[i]) && /[a-z)]/i.test(str[i-1])) {
                     str  = str.slice(0, i) + "*" + str.slice(i, str.length);
                     i++;
@@ -141,8 +141,10 @@ class PreProcessor
     //handles priority of logic. (NOT is first)
     prec(c) {
         if(c == '\'')
+            return 3;
+        else if(c == '*')
             return 2;
-        else if(c == '+' || c == '*')
+        else if(c == '+')
             return 1;
         else
             return -1;
@@ -150,12 +152,12 @@ class PreProcessor
 } // End of preproccesor class.
 
 // Test case.
-// let obj = new PreProcessor("AB'+(C'+D')A");
+let obj = new PreProcessor("AB'+A(C'+D')");
 // let obj = new PreProcessor("AB'C(A+B)'");
-// console.log("Expression entered      :" + "AB'+(C'+D')A")
-// console.log("Expression preprocessed :" + obj.strProc);
-// console.log("Expected result         :" + "AB'*C'D'+A+")
-// console.log("Expression in postfix   :" +  obj.expression);
+console.log("Expression entered      :" + "AB'+A(C'+D')")
+console.log("Expression preprocessed :" + obj.strProc);
+console.log("Expected result         :" + "AB'*AC'D'+*+")
+console.log("Expression in postfix   :" +  obj.expression);
 
 // Export modules
 module.exports = PreProcessor;

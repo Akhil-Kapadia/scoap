@@ -114,7 +114,8 @@ class Scoap extends Netlist
                 // CO(input) = SUM(CC0(n)) - CC0(input) + 1
                 case "OR":
                     sum = 0;
-                    for(let j of netlist.incoming[nodes[i]._out])
+                    const newLocal = netlist.incoming;
+                    for(let j of newLocal[nodes[i]._out])
                     {
                         sum += nodes[j].CC[0];
                     }
@@ -178,11 +179,11 @@ class CollapseFaults extends Netlist
     } //EOF equivalent faults.
 }
 
-let test = new CollapseFaults("AB'*C*AB+'*");
-// let str = new PreProcessor("AB'+A(C'+D')");
-// console.log(`Orignal Expression ${str.strProc}`);
-// console.log(`Postfix expression ${str.expression}`);
-// let test = new Scoap(str.expression);
+// let test = new CollapseFaults("AB'*C*AB+'*");
+let str = new PreProcessor("AB'+A(C'+D')");
+console.log(`Orignal Expression ${str.strProc}`);
+console.log(`Postfix expression ${str.expression}`);
+let test = new Scoap(str.expression);
 test.componentList.forEach(item => console.log(item));
 test.nodesList.forEach(item => console.log(item));
 console.log(test.netlist);
