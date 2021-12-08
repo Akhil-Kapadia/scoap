@@ -152,12 +152,12 @@ class PreProcessor
 } // End of preproccesor class.
 
 // Test case.
-let obj = new PreProcessor("AB'+A(C'+D')");
-// let obj = new PreProcessor("AB'C(A+B)'");
-console.log("Expression entered      :" + "AB'+A(C'+D')")
-console.log("Expression preprocessed :" + obj.strProc);
-console.log("Expected result         :" + "AB'*AC'D'+*+")
-console.log("Expression in postfix   :" +  obj.expression);
+// let obj = new PreProcessor("AB'+A(C'+D')");
+// // let obj = new PreProcessor("AB'C(A+B)'");
+// console.log("Expression entered      :" + "AB'+A(C'+D')")
+// console.log("Expression preprocessed :" + obj.strProc);
+// console.log("Expected result         :" + "AB'*AC'D'+*+")
+// console.log("Expression in postfix   :" +  obj.expression);
 
 // Export modules
 module.exports = PreProcessor;

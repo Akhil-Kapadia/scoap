@@ -180,14 +180,14 @@ class CollapseFaults extends Netlist
 }
 
 // let test = new CollapseFaults("AB'*C*AB+'*");
-let str = new PreProcessor("AB'+A(C'+D')");
-console.log(`Orignal Expression ${str.strProc}`);
-console.log(`Postfix expression ${str.expression}`);
-let test = new Scoap(str.expression);
-test.componentList.forEach(item => console.log(item));
-test.nodesList.forEach(item => console.log(item));
-console.log(test.netlist);
-console.log();
+// let str = new PreProcessor("AB'+A(C'+D')");
+// console.log(`Orignal Expression ${str.strProc}`);
+// console.log(`Postfix expression ${str.expression}`);
+// let test = new Scoap(str.expression);
+// test.componentList.forEach(item => console.log(item));
+// test.nodesList.forEach(item => console.log(item));
+// console.log(test.netlist);
+// console.log();
 
 // export classes
 module.exports = {
