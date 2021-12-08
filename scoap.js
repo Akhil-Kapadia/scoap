@@ -1,5 +1,6 @@
 // Imports 
 const {Netlist, Node} = require("./netlist.js");
+const PreProcessor = require("./preProcess.js");
 const preProcessor = require('./preProcess.js');
 
 
@@ -129,30 +130,66 @@ class Scoap extends Netlist
     } // End of combinationalObservability function.
 } // End of scoap Class.
 
-// /**Class to calculate the collapse faults of a circuit and give the collapse ratio */
-// class CollapseFaults extends Netlist
-// {
-//     /**
-//      * Calculates the collapse ratio of the given boolean circuit and finds the
-//      * equivalent/dominant faults of each node.
-//      * @param {String} exp Processed boolean expression.
-//      */
-//     constructor(exp)
-//     {
-//         super(exp); // Call the netlist class to get its stuff
-//         this.equivalentFaults(this.nodesList); // Find equivalent faults.
-//     }
+/**Class to calculate the collapse faults of a circuit and give the collapse ratio */
+class CollapseFaults extends Netlist
+{
+    /**
+     * Calculates the collapse ratio of the given boolean circuit and finds the
+     * equivalent/dominant faults of each node.
+     * @param {String} exp Processed boolean expression.
+     */
+    constructor(exp)
+    {
+        super(exp); // Call the netlist class to get its stuff
+        // Add fault property to nodes. The array [SA0, SA1] -> 0 means fault eliminated.
+        this.nodesList.forEach(node => node.fault = [1, 1]);
+        this.equivalentFaults(this.nodesList, this.componentList, this.netlist); // Find equivalent faults.
+    }
 
-//     equivalentFaults(nodes, comps)
-//     {
-//         nodes.forEach(node => {
-//             switch(node._in)
-//         });
-//     } //EOF equivalent faults.
-// }
+    equivalentFaults(nodes, comps, netlist)
+    {
+        // Iterate through components and the nodes attached, start from last.
+        for(let i = comps.length - 1; i > 0; i--)
+        {
+            switch(comps[i].logic)
+            {
+                case "AND":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [1,0];
+                    }
+                break;
 
-let test = new Scoap("AB'*C*AB+'*");
+                case "OR":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [0,1];
+                    }
+                break;
+
+                case "NOT":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [0,0];
+                    }
+                break;
+            }
+        }
+    } //EOF equivalent faults.
+}
+
+let test = new CollapseFaults("AB'*C*AB+'*");
+// let str = new PreProcessor("AB'+A(C'+D')");
+// console.log(`Orignal Expression ${str.strProc}`);
+// console.log(`Postfix expression ${str.expression}`);
+// let test = new Scoap(str.expression);
 test.componentList.forEach(item => console.log(item));
 test.nodesList.forEach(item => console.log(item));
 console.log(test.netlist);
 console.log();
+
+// export classes
+module.exports = {
+    Scoap,
+    CollapseFaults
+};

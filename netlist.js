@@ -46,7 +46,7 @@ class Netlist
         gates.push("F");    // Default output if F
         for (let i in exp)
         {
-            if (!st.includes(exp[i]) && isLetter(exp[i]))
+            if (!st.includes(exp[i]) && /[a-z]/i.test(exp[i]))
                 st.push(exp[i]);
         }
         st.forEach(item => gates.push(item));
@@ -55,7 +55,7 @@ class Netlist
         for (let i in exp){
             let gate = "";
             //If its an operand push to stack
-            if(isLetter(exp[i]))
+            if(/[a-z]/i.test(exp[i]))
                 st.push(exp[i]);
             // If its an operator process is, and push evaluated exp onto stack
             else {
@@ -306,15 +306,6 @@ class Node
     {
         return comp.layer;
     }
-}
-
-/**
- * Checks to see if its a letter.
- * @param {String} str User Expression
- * @returns Boolean T/F if letter
- */
-const isLetter = (str) => {
-    return (str.toUpperCase() != str.toLowerCase());
 }
 
 // //Test case

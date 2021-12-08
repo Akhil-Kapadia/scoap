@@ -6,7 +6,12 @@ File Name:   preProcess.js
 Project Name:   scoap 
 Class Name:  PreProcessor
 
-Description: Takes an input string and validates it. The class has method to return a T/F for valid strings and preprocesses to for algorihtmic purposes.
+Description: Takes an input string and validates it. The class has method to return 
+a T/F for valid strings and preprocesses to for algorihtmic purposes. 
+
+Note: The boolean expression denote not with ' and must use letters as input names.
+If parenthesis are included, any leading operations must be put after the ().
+I.e A(B+C) should instead be (B+C)A.
 
 Revision: 1.00
 Changelog/Github:  https://github.com/Akhil-Kapadia/scoap
@@ -37,14 +42,26 @@ class PreProcessor
      */
     isValid(str)
     {
+        let st = [];
         for (let i in str)
         {
+            // Check for unknown characters
             let pattern = /[a-z\'()+]/i
             if(!pattern.test(str[i])){
                 throw 'Invalid Input';
                 return false;
             }
+
+            // check for balanced parenthesis.
+            let char = st[st.length - 1];
+            if(str[i] === "(")
+                st.push(str[i]);
+            else if(char === "(" && str[i] == ")")
+                st.pop();
         }
+        // stack should be empty by now.
+        if(st.length)
+            throw 'Invalid Input';
         return true;
     }
 
@@ -55,14 +72,17 @@ class PreProcessor
      */
     preProcess(str)
     {
-    
-        let pattern = /[a-z]/i;
-        for (let i = 0; i < str.length; i++){
-            if(i > 0)
-                if( (pattern.test(str[i]) || (str[i] == "(")) && (pattern.test(str[i-1])) || (str[i-1] == "\'") ){
+        for (let i = 1; i < str.length - 1; i++){
+            // Add * when AB or A( -> A*B or A*(
+            if(/[a-z(]/i.test(str[i]) && /[a-z)]/i.test(str[i-1])) {
                     str  = str.slice(0, i) + "*" + str.slice(i, str.length);
                     i++;
-                }
+            } else 
+            // Add * when AB'C or ()'() -> A*B'*C or ()'*()
+            if(/[\']/i.test(str[i-1]) && /[a-z(]/i.test(str[i])) {
+                str  = str.slice(0, i) + "*" + str.slice(i, str.length);
+                i++;
+            }
         }
         return str;
     }
@@ -84,7 +104,7 @@ class PreProcessor
         {
             let c = str[i];
             // If gate input add to result
-            if (isLetter(c)){
+            if (/[a-z]/i.test(c)){
                 result += c;
             }
             // if parenthesis stack and add to result
@@ -129,20 +149,12 @@ class PreProcessor
     }
 } // End of preproccesor class.
 
-/**
- * Checks to see if its a letter.
- * @param {String} str User Expression
- * @returns Boolean T/F if letter
- */
- const isLetter = (str) => {
-    return (str.toUpperCase() != str.toLowerCase());
-}
-
 // Test case.
+// let obj = new PreProcessor("AB'+(C'+D')A");
 // let obj = new PreProcessor("AB'C(A+B)'");
-// console.log("Expression entered      :" + "AB'C(A+B)'")
+// console.log("Expression entered      :" + "AB'+(C'+D')A")
 // console.log("Expression preprocessed :" + obj.strProc);
-// console.log("Expected result         :" + "AB'*C*AB+'*")
+// console.log("Expected result         :" + "AB'*C'D'+A+")
 // console.log("Expression in postfix   :" +  obj.expression);
 
 // Export modules
