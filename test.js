@@ -4,7 +4,8 @@ const {Scoap, CollapseFaults} = require("./scoap.js");
 /*  Input your boolean expression here.
     Only allows 2 input per gate. Go nuts.
 */
-let str = "AB'+A(C'+D')";
+ let str = "AB'+A(C'+D')";    // test case. Change this to whatever expression you want to test.
+
 
 
 // Processes
