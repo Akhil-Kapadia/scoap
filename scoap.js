@@ -1,5 +1,6 @@
 // Imports 
 const {Netlist, Node} = require("./netlist.js");
+const PreProcessor = require("./preProcess.js");
 const preProcessor = require('./preProcess.js');
 
 
@@ -113,7 +114,8 @@ class Scoap extends Netlist
                 // CO(input) = SUM(CC0(n)) - CC0(input) + 1
                 case "OR":
                     sum = 0;
-                    for(let j of netlist.incoming[nodes[i]._out])
+                    const newLocal = netlist.incoming;
+                    for(let j of newLocal[nodes[i]._out])
                     {
                         sum += nodes[j].CC[0];
                     }
@@ -129,30 +131,121 @@ class Scoap extends Netlist
     } // End of combinationalObservability function.
 } // End of scoap Class.
 
-// /**Class to calculate the collapse faults of a circuit and give the collapse ratio */
-// class CollapseFaults extends Netlist
-// {
-//     /**
-//      * Calculates the collapse ratio of the given boolean circuit and finds the
-//      * equivalent/dominant faults of each node.
-//      * @param {String} exp Processed boolean expression.
-//      */
-//     constructor(exp)
-//     {
-//         super(exp); // Call the netlist class to get its stuff
-//         this.equivalentFaults(this.nodesList); // Find equivalent faults.
-//     }
+/**Class to calculate the collapse faults of a circuit and give the collapse ratio */
+class CollapseFaults extends Netlist
+{
+    /**
+     * Calculates the collapse ratio of the given boolean circuit and finds the
+     * equivalent/dominant faults of each node.
+     * @param {String} exp Processed boolean expression.
+     */
+    constructor(exp)
+    {
+        super(exp); // Call the netlist class to get its stuff
+        // Add fault property to nodes. The array [SA0, SA1] -> 0 means fault eliminated.
+        this.nodesList.forEach(node => node.fault = [1, 1]);
+        this.equivalentFaults(this.nodesList, this.componentList, this.netlist); // Find equivalent faults.
+        this.dominantFaults(this.nodesList, this.componentList, this.netlist); // Find dominant faults.
+        this.ratio = this.collapseRatio(this.nodesList); // Finds the collapse ratio,
+    }
 
-//     equivalentFaults(nodes, comps)
-//     {
-//         nodes.forEach(node => {
-//             switch(node._in)
-//         });
-//     } //EOF equivalent faults.
-// }
+    equivalentFaults(nodes, comps, netlist)
+    {
+        // Iterate through components and the nodes attached, start from last.
+        for(let i = comps.length - 1; i > 0; i--)
+        {
+            switch(comps[i].logic)
+            {
+                case "AND":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [1,0];
+                    }
+                break;
 
-let test = new Scoap("AB'*C*AB+'*");
-test.componentList.forEach(item => console.log(item));
-test.nodesList.forEach(item => console.log(item));
-console.log(test.netlist);
-console.log();
+                case "OR":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [0,1];
+                    }
+                break;
+
+                case "NOT":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [0,0];
+                    }
+                break;
+            }
+        }
+    } //EOF equivalent faults.
+
+    /**
+     * Finds the dominants fault in the booleans circuit.
+     * @param {Array} nodes Array of Node objects
+     * @param {Array} comps Array of Component Objects
+     * @param {Array} netlist Array of nodes connecting components
+     */
+    dominantFaults(nodes, comps, netlist)
+    {
+        // Iterate through components and the nodes attached, start from last.
+        for(let i = comps.length - 1; i > 0; i--)
+        {
+            switch(comps[i].logic)
+            {
+                case "AND":
+                    for(let j of netlist.outgoing[i])
+                    {
+                        nodes[j].fault[0] = 0;
+                    }
+                break;
+
+                case "OR":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault[1] = 0
+                    }
+                break;
+
+                case "NOT":
+                    for(let j of netlist.incoming[i])
+                    {
+                        nodes[j].fault = [0,0];
+                    }
+                break;
+            }
+        }
+    } //EOF Dominant faults.
+
+    /**
+     * Finds the collapse ratio of the circuit by iterating through the circuit.
+     * @param {Array} nodes Array of Node objects
+     * @returns the collapse ratio of the circuit
+     */
+    collapseRatio(nodes)
+    {
+        let total = nodes.length * 2 - 2;   // F doesn't count as a node.
+        let faults = 0;
+        nodes.forEach(node => {
+            if(node.fault[0] || node.fault[1])
+                faults++;
+        });
+        return faults/total;
+    }
+}
+
+// let test = new CollapseFaults("AB'*C*AB+'*");
+// let str = new PreProcessor("AB'+A(C'+D')");
+// console.log(`Orignal Expression ${str.strProc}`);
+// console.log(`Postfix expression ${str.expression}`);
+// let test = new Scoap(str.expression);
+// test.componentList.forEach(item => console.log(item));
+// test.nodesList.forEach(item => console.log(item));
+// console.log(test.netlist);
+// console.log();
+
+// export classes
+module.exports = {
+    Scoap,
+    CollapseFaults
+};

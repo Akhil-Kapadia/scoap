@@ -46,7 +46,7 @@ class Netlist
         gates.push("F");    // Default output if F
         for (let i in exp)
         {
-            if (!st.includes(exp[i]) && isLetter(exp[i]))
+            if (!st.includes(exp[i]) && /[a-z]/i.test(exp[i]))
                 st.push(exp[i]);
         }
         st.forEach(item => gates.push(item));
@@ -55,7 +55,7 @@ class Netlist
         for (let i in exp){
             let gate = "";
             //If its an operand push to stack
-            if(isLetter(exp[i]))
+            if(/[a-z]/i.test(exp[i]))
                 st.push(exp[i]);
             // If its an operator process is, and push evaluated exp onto stack
             else {
@@ -69,27 +69,19 @@ class Netlist
                     break;
                     case "*":
                         gate = op1;
-                        if (lastOp == exp[i])                                   // Handle successive operations ie. Multi input AND
-                            while (st.length > 0)
-                                gate += st.pop();
-                        else 
-                            gate += st.pop() + exp[i];                                                                                                       
+                        gate = st.pop() + gate + exp[i];                                                                                                       
                         st.push(gate);
                     break;
                     case "+":
                         gate = op1;
-                        if (lastOp == exp[i])                                   // Handle successive operations ie. Multi input OR
-                            while (st.length > 0)                               
-                                gate += st.pop();
-                        else 
-                            gate += st.pop() + exp[i];                                                                                
+                        gate = st.pop() + gate + exp[i];                                                                                
                         st.push(gate);
                     break;
                     default:
                         throw "Invalid Input";                                  // Detected an operation not specified.
                 }
-                
-                if (exp[i] == lastOp)
+
+                if (exp[i] == lastOp && lastOp != '\'')
                     gates.pop();
                 gates.push(gate);
                 lastOp = exp[i];
@@ -219,7 +211,8 @@ class Component
         // If this is the output component.
         if (exp === "F")
             return [exp];
-        exp = exp.replace(exp[exp.length - 1], "");  // Remove gate operator
+        let logic = exp[exp.length-1];
+        exp = exp.slice(0, exp.length - 1);  // Remove gate operator
         let operands = [];
         let st =[];
 
@@ -236,10 +229,12 @@ class Component
             // If there is an operand, then contents of the stack are an operand from a gate
             } else  if(/[+*]/.test(exp[0]))
             {
-                let op = ""
-                while(st.length > 0)
-                    op = st.pop() + op;
-                operands.push(op + exp[0]);
+                let op = st.pop();
+                if (st.length > 0)
+                    operands.push(st.pop() + op + exp[0]);
+                else 
+                    operands[operands.length - 1] = op + operands[operands.length - 1] + exp[0];
+
                 exp = exp.replace(exp[0], "");
             
             // when in doubt push it to the stack
@@ -308,19 +303,12 @@ class Node
     }
 }
 
-/**
- * Checks to see if its a letter.
- * @param {String} str User Expression
- * @returns Boolean T/F if letter
- */
-const isLetter = (str) => {
-    return (str.toUpperCase() != str.toLowerCase());
-}
-
 // //Test case
-// console.log("AB'C(A+B)'");
-// console.log("AB'*C*AB+'*");
-// let x = new Netlist("AB'*C*AB+'*");
+// let str = "AB'*C*AB+'*";
+// let str = "AB'*AC'D'+*+";
+// console.log("AB'+(C'+D')C");
+// console.log(str);
+// let x = new Netlist(str);
 // x.componentList.forEach(item => console.log(item));
 // x.nodesList.forEach(item => console.log(item));
 // console.log(x.netlist);
