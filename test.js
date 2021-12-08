@@ -28,3 +28,9 @@ scoap.nodesList.forEach(node => {
     console.log(`Node ID ${node.ID} with signal ${node.expression} has a CC of ${node.CC} and a CO of ${node.CO}`);
 });
 
+// Print all nodes and components. 
+//Uncomment if you want to see full netlist.
+// scoap.componentList.forEach(comp => console.log(comp));
+// scoap.nodesList.forEach(node => console.log(node));
+// scoap.netlist.forEach(nets => console.log(nets));
+// console.log();  // set a breakpoint here to see everything.
